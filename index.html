@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reflex Typing Test</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --error: #ef4444;
+      --success: #22c55e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+
+    .container {
+      background-color: var(--card);
+      width: 100%;
+      max-width: 500px;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .control-group {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    select {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--muted);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .word-display {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--accent);
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 1.5rem 0;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      font-size: 1.2rem;
+      border-radius: 8px;
+      border: 2px solid var(--muted);
+      background: var(--bg);
+      color: var(--text);
+      text-align: center;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    input[type="text"].shake {
+      border-color: var(--error);
+      animation: shake 0.2s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    button {
+      width: 100%;
+      padding: 0.9rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      background-color: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .timer {
+      font-size: 1.2rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .results {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: none;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .stat-box {
+      background: var(--bg);
+      padding: 0.8rem;
+      border-radius: 8px;
+    }
+
+    .stat-val {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    .stat-lbl {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Reflex Typing</h1>
+
+  <div class="controls" id="setupControls">
+    <div class="control-group">
+      <label for="timeSelect">Vrijeme:</label>
+      <select id="timeSelect">
+        <option value="15">15 sekundi</option>
+        <option value="30" selected>30 sekundi</option>
+        <option value="60">60 sekundi</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="diffSelect">Težina:</label>
+      <select id="diffSelect">
+        <option value="easy">Lake (3-4 slova)</option>
+        <option value="medium" selected>Srednje (5-7 slova)</option>
+        <option value="hard">Teške (8+ slova)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="timer" id="timerDisplay">Preostalo: --s</div>
+
+  <div class="word-display" id="wordDisplay">PRITISNI START</div>
+
+  <input type="text" id="typeInput" placeholder="Utipkaj riječ..." disabled autocomplete="off" spellcheck="false">
+
+  <button id="startBtn">Započni igru</button>
+
+  <div class="results" id="resultsBox">
+    <h2>Rezultati</h2>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-val" id="resTotal">0</div>
+        <div class="stat-lbl">Znakova</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="resCPM">0</div>
+        <div class="stat-lbl">CPM</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="resErrors">0</div>
+        <div class="stat-lbl">Greške</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const wordLists = {
+    easy: ['oko', 'pas', 'zid', 'vuk', 'sat', 'dar', 'prst', 'mac', 'sir', 'nos', 'dom', 'med', 'zub', 'sok', 'noć', 'dan', 'put', 'vrh'],
+    medium: ['ruka', 'brzina', 'kava', 'macka', 'sunce', 'trava', 'oblak', 'vjetar', 'ekran', 'misao', 'papir', 'zemlja', 'sustav', 'svjetlo', 'motor'],
+    hard: ['koordinacija', 'koncentracija', 'samopouzdanje', 'jednostavnost', 'tipkovnica', 'natjecanje', 'arhitektura', 'brzinomjer', 'produktivnost']
+  };
+
+  let timer = null;
+  let timeLeft = 0;
+  let selectedTime = 30;
+  let currentWord = '';
+  let correctCharsCount = 0;
+  let errorCount = 0;
+  let isPlaying = false;
+  let lastTypedLength = 0;
+
+  const timeSelect = document.getElementById('timeSelect');
+  const diffSelect = document.getElementById('diffSelect');
+  const timerDisplay = document.getElementById('timerDisplay');
+  const wordDisplay = document.getElementById('wordDisplay');
+  const typeInput = document.getElementById('typeInput');
+  const startBtn = document.getElementById('startBtn');
+  const resultsBox = document.getElementById('resultsBox');
+  const resTotal = document.getElementById('resTotal');
+  const resCPM = document.getElementById('resCPM');
+  const resErrors = document.getElementById('resErrors');
+
+  function getRandomWord() {
+    const list = wordLists[diffSelect.value];
+    let nextWord = list[Math.floor(Math.random() * list.length)];
+    while (nextWord === currentWord && list.length > 1) {
+      nextWord = list[Math.floor(Math.random() * list.length)];
+    }
+    return nextWord;
+  }
+
+  function startGame() {
+    isPlaying = true;
+    correctCharsCount = 0;
+    errorCount = 0;
+    lastTypedLength = 0;
+    selectedTime = parseInt(timeSelect.value);
+    timeLeft = selectedTime;
+
+    resultsBox.style.display = 'none';
+    timeSelect.disabled = true;
+    diffSelect.disabled = true;
+    startBtn.style.display = 'none';
+    typeInput.disabled = false;
+    typeInput.value = '';
+    typeInput.focus();
+
+    timerDisplay.textContent = `Preostalo: ${timeLeft}s`;
+    nextWord();
+
+    clearInterval(timer);
+    timer = setInterval(() => {
+      timeLeft--;
+      timerDisplay.textContent = `Preostalo: ${timeLeft}s`;
+
+      if (timeLeft <= 0) {
+        endGame();
+      }
+    }, 1000);
+  }
+
+  function nextWord() {
+    currentWord = getRandomWord();
+    wordDisplay.textContent = currentWord;
+    typeInput.value = '';
+    lastTypedLength = 0;
+  }
+
+  typeInput.addEventListener('input', () => {
+    if (!isPlaying) return;
+
+    const val = typeInput.value.toLowerCase();
+    const target = currentWord.toLowerCase();
+
+    // Detekcija greške ako ono što je utipkano ne odgovara početku riječi
+    if (val.length > lastTypedLength) {
+      if (!target.startsWith(val)) {
+        errorCount++;
+        typeInput.classList.add('shake');
+        setTimeout(() => typeInput.classList.remove('shake'), 200);
+      }
+    }
+    lastTypedLength = val.length;
+
+    // Točan unos bez pritiska na Enter
+    if (val === target) {
+      correctCharsCount += currentWord.length;
+      nextWord();
+    }
+  });
+
+  function endGame() {
+    isPlaying = false;
+    clearInterval(timer);
+
+    typeInput.disabled = true;
+    startBtn.style.display = 'block';
+    startBtn.textContent = 'Igraj ponovno';
+    timeSelect.disabled = false;
+    diffSelect.disabled = false;
+
+    wordDisplay.textContent = 'KRAJ!';
+    timerDisplay.textContent = 'Vrijeme je isteklo';
+
+    const cpm = Math.round((correctCharsCount / selectedTime) * 60);
+
+    resTotal.textContent = correctCharsCount;
+    resCPM.textContent = cpm;
+    resErrors.textContent = errorCount;
+
+    resultsBox.style.display = 'block';
+  }
+
+  startBtn.addEventListener('click', startGame);
+</script>
+
+</body>
+</html>
